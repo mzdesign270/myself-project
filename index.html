@@ -18,7 +18,28 @@
     (function() {
       'use strict';
 
-      // === تحدي الـ30 يوم ===
+      /*
+       * تحدي الـ30 يوم
+       * Theme variables (dark):
+       *   --background: 222 47% 8%
+       *   --foreground: 210 40% 98%
+       *   --card: 222 47% 11%
+       *   --card-foreground: 210 40% 98%
+       *   --card-border: 222 47% 16%
+       *   --border: 222 47% 16%
+       *   --primary: 188 86% 53%
+       *   --primary-foreground: 222 47% 11%
+       *   --secondary: 222 47% 16%
+       *   --muted: 222 47% 16%
+       *   --muted-foreground: 215 20.2% 65.1%
+       *   --success: 142 71% 45%
+       *   --sidebar: 222 47% 9%
+       *   --sidebar-foreground: 210 40% 98%
+       *   --sidebar-accent: 222 47% 16%
+       *   Font: Tajawal, sans-serif
+       *   --radius: 0.75rem
+       */
+
       const STORAGE_KEY = 'challenge30_data';
 
       function getStoredData() {
@@ -35,58 +56,51 @@
         } catch(e) {}
       }
 
+      // Inject nav item into sidebar
       function injectNavItem() {
         const checkNav = setInterval(() => {
-          const navLinks = document.querySelectorAll('nav a, aside a');
-          let sidebar = null;
+          // Find the nav container by looking for sidebar links
+          const allLinks = document.querySelectorAll('aside a, nav a');
+          let navContainer = null;
+          let settingsLink = null;
 
-          // Find the sidebar/nav container
-          for (const link of navLinks) {
-            if (link.textContent.includes('الإعدادات')) {
-              sidebar = link.parentElement;
+          for (const link of allLinks) {
+            if (link.textContent && link.textContent.includes('الإعدادات')) {
+              settingsLink = link.closest('a');
+              navContainer = settingsLink ? settingsLink.parentElement : null;
               break;
             }
           }
 
-          if (sidebar) {
+          if (navContainer && !document.querySelector('[data-challenge-nav]')) {
             clearInterval(checkNav);
-            // Check if already injected
-            if (document.querySelector('[data-challenge-nav]')) return;
 
             const navItem = document.createElement('a');
             navItem.setAttribute('data-challenge-nav', 'true');
-            navItem.href = '#challenge30';
-            navItem.className = sidebar.children[0] ? sidebar.children[0].className : '';
-            navItem.innerHTML = `
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-              <span>تحدي الـ30 يوم</span>
-            `;
-            navItem.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;color:inherit;text-decoration:none;transition:background 0.2s;';
-            navItem.addEventListener('mouseenter', () => navItem.style.background = 'rgba(255,255,255,0.05)');
-            navItem.addEventListener('mouseleave', () => navItem.style.background = 'transparent');
-            navItem.addEventListener('click', (e) => {
+            navItem.href = '#';
+            navItem.onclick = function(e) {
               e.preventDefault();
               showChallengePage();
-            });
+            };
 
-            // Insert before settings
-            const settingsLink = Array.from(sidebar.children).find(el => el.textContent && el.textContent.includes('الإعدادات'));
+            // Match the exact same structure: div > icon + span
+            navItem.innerHTML = `
+              <div class="flex items-center gap-3 px-3.5 py-2.5 rounded-xl transition-all hover-elevate cursor-pointer font-medium text-[13px] text-sidebar-foreground hover:bg-sidebar-accent">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4 shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                <span class="whitespace-nowrap leading-tight">تحدي الـ30 يوم</span>
+              </div>
+            `;
+
             if (settingsLink) {
-              sidebar.insertBefore(navItem, settingsLink);
+              navContainer.insertBefore(navItem, settingsLink);
             } else {
-              sidebar.appendChild(navItem);
+              navContainer.appendChild(navItem);
             }
           }
-        }, 500);
+        }, 300);
       }
 
       function showChallengePage() {
-        // Find the main content area
-        const mainContent = document.querySelector('main') || document.querySelector('[class*="flex-1"]') || document.querySelector('#root > div > div:last-child');
-        
-        if (!mainContent) return;
-
-        // Create overlay
         let overlay = document.getElementById('challenge30-overlay');
         if (overlay) {
           overlay.style.display = 'flex';
@@ -102,15 +116,15 @@
           left: 0;
           right: 0;
           bottom: 0;
-          background: hsl(224, 71%, 4%);
+          background: hsl(222, 47%, 8%);
           z-index: 9999;
           display: flex;
           justify-content: center;
           align-items: flex-start;
           overflow-y: auto;
-          padding: 40px 20px;
+          padding: 32px 16px;
           direction: rtl;
-          font-family: Inter, sans-serif;
+          font-family: "Tajawal", sans-serif;
         `;
         document.body.appendChild(overlay);
         renderChallenge(overlay);
@@ -123,58 +137,67 @@
         const allDone = completedCount === 30;
 
         container.innerHTML = `
-          <div style="max-width:700px;width:100%;background:hsl(222, 47%, 11%);border-radius:16px;padding:32px;border:1px solid hsl(217, 33%, 17%);">
+          <div style="max-width:600px;width:100%;animation:fadeIn 0.3s ease;">
             
-            <!-- Close Button -->
-            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
-              <h1 style="font-size:24px;font-weight:700;color:#f8fafc;margin:0;">🏆 تحدي الـ30 يوم</h1>
-              <button id="challenge30-close" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;padding:8px;">✕</button>
+            <!-- Header -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+              <div style="display:flex;align-items:center;gap:12px;">
+                <div style="width:40px;height:40px;border-radius:12px;background:hsl(142,71%,45%,0.1);display:flex;align-items:center;justify-content:center;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="hsl(142,71%,45%)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                </div>
+                <h1 style="font-size:22px;font-weight:700;color:hsl(210,40%,98%);margin:0;">تحدي الـ30 يوم</h1>
+              </div>
+              <button id="challenge30-close" style="width:36px;height:36px;border-radius:10px;border:1px solid hsl(222,47%,16%);background:hsl(222,47%,11%);color:hsl(215,20.2%,65.1%);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.2s;">✕</button>
             </div>
 
-            <!-- Challenge Name -->
-            <div style="margin-bottom:24px;">
-              <label style="display:block;font-size:14px;color:#94a3b8;margin-bottom:8px;">اسم التحدي</label>
+            <!-- Challenge Name Card -->
+            <div style="background:hsl(222,47%,11%);border:1px solid hsl(222,47%,16%);border-radius:12px;padding:20px;margin-bottom:16px;">
+              <label style="display:block;font-size:13px;font-weight:500;color:hsl(215,20.2%,65.1%);margin-bottom:10px;">اسم التحدي</label>
               <input id="challenge30-name" type="text" placeholder="مثال: تحدي الرياضة، تحدي القراءة..." 
-                value="${data.name || ''}"
-                style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid hsl(217,33%,17%);background:hsl(224,71%,4%);color:#f8fafc;font-size:15px;outline:none;direction:rtl;box-sizing:border-box;" />
+                value="${(data.name || '').replace(/"/g, '&quot;')}"
+                style="width:100%;padding:10px 14px;border-radius:8px;border:1px solid hsl(222,47%,16%);background:hsl(222,47%,8%);color:hsl(210,40%,98%);font-size:14px;font-family:'Tajawal',sans-serif;outline:none;direction:rtl;box-sizing:border-box;transition:border-color 0.2s;" 
+                onfocus="this.style.borderColor='hsl(188,86%,53%)'" 
+                onblur="this.style.borderColor='hsl(222,47%,16%)'" />
             </div>
 
-            <!-- Progress Section -->
-            <div style="margin-bottom:24px;background:hsl(224,71%,4%);border-radius:12px;padding:20px;border:1px solid hsl(217,33%,17%);">
-              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                <span style="font-size:14px;color:#94a3b8;">التقدم</span>
-                <span style="font-size:20px;font-weight:700;color:#22c55e;">${completedCount}/30</span>
+            <!-- Progress Card -->
+            <div style="background:hsl(222,47%,11%);border:1px solid hsl(222,47%,16%);border-radius:12px;padding:20px;margin-bottom:16px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                <span style="font-size:13px;font-weight:500;color:hsl(215,20.2%,65.1%);">التقدم</span>
+                <span style="font-size:18px;font-weight:700;color:hsl(142,71%,45%);">${completedCount}<span style="color:hsl(215,20.2%,65.1%);font-size:14px;font-weight:500;">/30</span></span>
               </div>
-              <div style="width:100%;height:12px;background:hsl(217,33%,17%);border-radius:99px;overflow:hidden;">
-                <div style="width:${percentage}%;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px;transition:width 0.3s ease;"></div>
+              <div style="width:100%;height:8px;background:hsl(222,47%,16%);border-radius:99px;overflow:hidden;">
+                <div style="width:${percentage}%;height:100%;background:hsl(142,71%,45%);border-radius:99px;transition:width 0.4s ease;"></div>
               </div>
-              <div style="text-align:left;margin-top:8px;font-size:13px;color:#64748b;">${percentage}%</div>
+              <div style="text-align:left;margin-top:8px;font-size:12px;color:hsl(215,20.2%,65.1%);">${percentage}%</div>
             </div>
 
             ${allDone ? `
-            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(22,163,74,0.05));border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
-              <div style="font-size:40px;margin-bottom:8px;">🎉🏆</div>
-              <p style="font-size:18px;font-weight:700;color:#22c55e;margin:0;">مبروك أنجزت التحدي!</p>
-              <p style="font-size:14px;color:#94a3b8;margin-top:8px;">أنت بطل! كملت 30 يوم بنجاح 💪</p>
+            <!-- Congratulations -->
+            <div style="background:hsl(142,71%,45%,0.08);border:1px solid hsl(142,71%,45%,0.25);border-radius:12px;padding:24px;text-align:center;margin-bottom:16px;">
+              <div style="font-size:36px;margin-bottom:10px;">🎉🏆</div>
+              <p style="font-size:17px;font-weight:700;color:hsl(142,71%,45%);margin:0;">مبروك أنجزت التحدي!</p>
+              <p style="font-size:13px;color:hsl(215,20.2%,65.1%);margin-top:8px;">أنت بطل! كملت 30 يوم بنجاح 💪</p>
             </div>
             ` : ''}
 
-            <!-- Days Grid -->
-            <div style="margin-bottom:24px;">
-              <label style="display:block;font-size:14px;color:#94a3b8;margin-bottom:12px;">اضغط على اليوم لتسجيل إنجازك</label>
-              <div id="challenge30-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
+            <!-- Days Grid Card -->
+            <div style="background:hsl(222,47%,11%);border:1px solid hsl(222,47%,16%);border-radius:12px;padding:20px;margin-bottom:16px;">
+              <label style="display:block;font-size:13px;font-weight:500;color:hsl(215,20.2%,65.1%);margin-bottom:16px;">اضغط على اليوم لتسجيل إنجازك</label>
+              <div id="challenge30-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;">
                 ${data.days.map((done, i) => `
                   <button class="challenge30-day" data-index="${i}" style="
                     width:100%;
                     aspect-ratio:1;
                     border-radius:50%;
-                    border:2px solid ${done ? '#22c55e' : 'hsl(217,33%,17%)'};
-                    background:${done ? 'rgba(34,197,94,0.15)' : 'hsl(224,71%,4%)'};
-                    color:${done ? '#22c55e' : '#94a3b8'};
-                    font-size:14px;
+                    border:2px solid ${done ? 'hsl(142,71%,45%)' : 'hsl(222,47%,16%)'};
+                    background:${done ? 'hsl(142,71%,45%,0.12)' : 'hsl(222,47%,8%)'};
+                    color:${done ? 'hsl(142,71%,45%)' : 'hsl(215,20.2%,65.1%)'};
+                    font-size:13px;
                     font-weight:600;
+                    font-family:'Tajawal',sans-serif;
                     cursor:pointer;
-                    transition:all 0.2s;
+                    transition:all 0.2s ease;
                     display:flex;
                     align-items:center;
                     justify-content:center;
@@ -184,20 +207,39 @@
             </div>
 
             <!-- Reset Button -->
-            <div style="text-align:center;">
+            <div style="text-align:center;padding-top:8px;">
               <button id="challenge30-reset" style="
-                padding:12px 32px;
+                padding:10px 24px;
                 border-radius:10px;
-                border:1px solid hsl(0,62%,50%);
-                background:rgba(239,68,68,0.1);
-                color:#ef4444;
-                font-size:14px;
+                border:1px solid hsl(0,62%,30%,0.4);
+                background:hsl(0,62%,30%,0.08);
+                color:hsl(0,62%,60%);
+                font-size:13px;
                 font-weight:600;
+                font-family:'Tajawal',sans-serif;
                 cursor:pointer;
-                transition:background 0.2s;
-              ">🔄 إعادة تعيين التحدي</button>
+                transition:all 0.2s;
+              ">إعادة تعيين التحدي</button>
             </div>
           </div>
+
+          <style>
+            @keyframes fadeIn {
+              from { opacity: 0; transform: translateY(8px) scale(0.98); }
+              to { opacity: 1; transform: translateY(0) scale(1); }
+            }
+            .challenge30-day:hover {
+              transform: scale(1.1);
+              border-color: hsl(188,86%,53%) !important;
+            }
+            #challenge30-reset:hover {
+              background: hsl(0,62%,30%,0.15) !important;
+            }
+            #challenge30-close:hover {
+              background: hsl(222,47%,16%);
+              color: hsl(210,40%,98%);
+            }
+          </style>
         `;
 
         // Event Listeners
