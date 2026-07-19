@@ -13,5 +13,230 @@
   </head>
   <body>
     <div id="root"></div>
+
+    <script>
+    (function() {
+      'use strict';
+
+      // === تحدي الـ30 يوم ===
+      const STORAGE_KEY = 'challenge30_data';
+
+      function getStoredData() {
+        try {
+          const data = localStorage.getItem(STORAGE_KEY);
+          if (data) return JSON.parse(data);
+        } catch(e) {}
+        return { name: '', days: Array(30).fill(false) };
+      }
+
+      function saveData(data) {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+        } catch(e) {}
+      }
+
+      function injectNavItem() {
+        const checkNav = setInterval(() => {
+          const navLinks = document.querySelectorAll('nav a, aside a');
+          let sidebar = null;
+
+          // Find the sidebar/nav container
+          for (const link of navLinks) {
+            if (link.textContent.includes('الإعدادات')) {
+              sidebar = link.parentElement;
+              break;
+            }
+          }
+
+          if (sidebar) {
+            clearInterval(checkNav);
+            // Check if already injected
+            if (document.querySelector('[data-challenge-nav]')) return;
+
+            const navItem = document.createElement('a');
+            navItem.setAttribute('data-challenge-nav', 'true');
+            navItem.href = '#challenge30';
+            navItem.className = sidebar.children[0] ? sidebar.children[0].className : '';
+            navItem.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+              <span>تحدي الـ30 يوم</span>
+            `;
+            navItem.style.cssText = 'display:flex;align-items:center;gap:12px;padding:8px 12px;border-radius:8px;color:inherit;text-decoration:none;transition:background 0.2s;';
+            navItem.addEventListener('mouseenter', () => navItem.style.background = 'rgba(255,255,255,0.05)');
+            navItem.addEventListener('mouseleave', () => navItem.style.background = 'transparent');
+            navItem.addEventListener('click', (e) => {
+              e.preventDefault();
+              showChallengePage();
+            });
+
+            // Insert before settings
+            const settingsLink = Array.from(sidebar.children).find(el => el.textContent && el.textContent.includes('الإعدادات'));
+            if (settingsLink) {
+              sidebar.insertBefore(navItem, settingsLink);
+            } else {
+              sidebar.appendChild(navItem);
+            }
+          }
+        }, 500);
+      }
+
+      function showChallengePage() {
+        // Find the main content area
+        const mainContent = document.querySelector('main') || document.querySelector('[class*="flex-1"]') || document.querySelector('#root > div > div:last-child');
+        
+        if (!mainContent) return;
+
+        // Create overlay
+        let overlay = document.getElementById('challenge30-overlay');
+        if (overlay) {
+          overlay.style.display = 'flex';
+          renderChallenge(overlay);
+          return;
+        }
+
+        overlay = document.createElement('div');
+        overlay.id = 'challenge30-overlay';
+        overlay.style.cssText = `
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: hsl(224, 71%, 4%);
+          z-index: 9999;
+          display: flex;
+          justify-content: center;
+          align-items: flex-start;
+          overflow-y: auto;
+          padding: 40px 20px;
+          direction: rtl;
+          font-family: Inter, sans-serif;
+        `;
+        document.body.appendChild(overlay);
+        renderChallenge(overlay);
+      }
+
+      function renderChallenge(container) {
+        const data = getStoredData();
+        const completedCount = data.days.filter(d => d).length;
+        const percentage = Math.round((completedCount / 30) * 100);
+        const allDone = completedCount === 30;
+
+        container.innerHTML = `
+          <div style="max-width:700px;width:100%;background:hsl(222, 47%, 11%);border-radius:16px;padding:32px;border:1px solid hsl(217, 33%, 17%);">
+            
+            <!-- Close Button -->
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;">
+              <h1 style="font-size:24px;font-weight:700;color:#f8fafc;margin:0;">🏆 تحدي الـ30 يوم</h1>
+              <button id="challenge30-close" style="background:none;border:none;color:#94a3b8;font-size:24px;cursor:pointer;padding:8px;">✕</button>
+            </div>
+
+            <!-- Challenge Name -->
+            <div style="margin-bottom:24px;">
+              <label style="display:block;font-size:14px;color:#94a3b8;margin-bottom:8px;">اسم التحدي</label>
+              <input id="challenge30-name" type="text" placeholder="مثال: تحدي الرياضة، تحدي القراءة..." 
+                value="${data.name || ''}"
+                style="width:100%;padding:12px 16px;border-radius:10px;border:1px solid hsl(217,33%,17%);background:hsl(224,71%,4%);color:#f8fafc;font-size:15px;outline:none;direction:rtl;box-sizing:border-box;" />
+            </div>
+
+            <!-- Progress Section -->
+            <div style="margin-bottom:24px;background:hsl(224,71%,4%);border-radius:12px;padding:20px;border:1px solid hsl(217,33%,17%);">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                <span style="font-size:14px;color:#94a3b8;">التقدم</span>
+                <span style="font-size:20px;font-weight:700;color:#22c55e;">${completedCount}/30</span>
+              </div>
+              <div style="width:100%;height:12px;background:hsl(217,33%,17%);border-radius:99px;overflow:hidden;">
+                <div style="width:${percentage}%;height:100%;background:linear-gradient(90deg,#22c55e,#16a34a);border-radius:99px;transition:width 0.3s ease;"></div>
+              </div>
+              <div style="text-align:left;margin-top:8px;font-size:13px;color:#64748b;">${percentage}%</div>
+            </div>
+
+            ${allDone ? `
+            <div style="background:linear-gradient(135deg,rgba(34,197,94,0.1),rgba(22,163,74,0.05));border:1px solid rgba(34,197,94,0.3);border-radius:12px;padding:20px;text-align:center;margin-bottom:24px;">
+              <div style="font-size:40px;margin-bottom:8px;">🎉🏆</div>
+              <p style="font-size:18px;font-weight:700;color:#22c55e;margin:0;">مبروك أنجزت التحدي!</p>
+              <p style="font-size:14px;color:#94a3b8;margin-top:8px;">أنت بطل! كملت 30 يوم بنجاح 💪</p>
+            </div>
+            ` : ''}
+
+            <!-- Days Grid -->
+            <div style="margin-bottom:24px;">
+              <label style="display:block;font-size:14px;color:#94a3b8;margin-bottom:12px;">اضغط على اليوم لتسجيل إنجازك</label>
+              <div id="challenge30-grid" style="display:grid;grid-template-columns:repeat(6,1fr);gap:12px;">
+                ${data.days.map((done, i) => `
+                  <button class="challenge30-day" data-index="${i}" style="
+                    width:100%;
+                    aspect-ratio:1;
+                    border-radius:50%;
+                    border:2px solid ${done ? '#22c55e' : 'hsl(217,33%,17%)'};
+                    background:${done ? 'rgba(34,197,94,0.15)' : 'hsl(224,71%,4%)'};
+                    color:${done ? '#22c55e' : '#94a3b8'};
+                    font-size:14px;
+                    font-weight:600;
+                    cursor:pointer;
+                    transition:all 0.2s;
+                    display:flex;
+                    align-items:center;
+                    justify-content:center;
+                  ">${done ? '✓' : (i + 1)}</button>
+                `).join('')}
+              </div>
+            </div>
+
+            <!-- Reset Button -->
+            <div style="text-align:center;">
+              <button id="challenge30-reset" style="
+                padding:12px 32px;
+                border-radius:10px;
+                border:1px solid hsl(0,62%,50%);
+                background:rgba(239,68,68,0.1);
+                color:#ef4444;
+                font-size:14px;
+                font-weight:600;
+                cursor:pointer;
+                transition:background 0.2s;
+              ">🔄 إعادة تعيين التحدي</button>
+            </div>
+          </div>
+        `;
+
+        // Event Listeners
+        container.querySelector('#challenge30-close').addEventListener('click', () => {
+          container.style.display = 'none';
+        });
+
+        container.querySelector('#challenge30-name').addEventListener('input', (e) => {
+          const d = getStoredData();
+          d.name = e.target.value;
+          saveData(d);
+        });
+
+        container.querySelectorAll('.challenge30-day').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const idx = parseInt(btn.getAttribute('data-index'));
+            const d = getStoredData();
+            d.days[idx] = !d.days[idx];
+            saveData(d);
+            renderChallenge(container);
+          });
+        });
+
+        container.querySelector('#challenge30-reset').addEventListener('click', () => {
+          if (confirm('هل أنت متأكد من إعادة تعيين التحدي؟ سيتم مسح كل التقدم.')) {
+            saveData({ name: '', days: Array(30).fill(false) });
+            renderChallenge(container);
+          }
+        });
+      }
+
+      // Initialize
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', injectNavItem);
+      } else {
+        injectNavItem();
+      }
+
+    })();
+    </script>
   </body>
 </html>
